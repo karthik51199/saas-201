@@ -28,22 +28,27 @@ def parse_dns(dns_raw)
   dns_records = {}
   dns_raw.each do |line|
     unless line[0] == "\n" or line[0] == "#"
-      arr = line.split ", "
-      dns_records[arr[1]] = arr[2].chomp
+      arr = line.split ","
+      if arr[0].strip == "A"
+        dns_records[arr[1].strip] = { :type => "A", :ip_address => arr[2].chomp.strip }
+      else
+        dns_records[arr[1].strip] = { :type => "CNAME", :alias => arr[2].chomp.strip }
+      end
     end
   end
   return dns_records
 end
 
 def resolve(dns_records, lookup_chain, domain)
-  my_keys = dns_records.keys
-  current = lookup_chain[-1]
+  lookup_result = dns_records[domain]
 
-  unless my_keys.include? current
-    lookup_chain = ["Error: record not found for #{domain}"] if current == domain
+  if lookup_result == nil
+    lookup_chain = ["Error: record not found for #{domain}"]
+  elsif lookup_result[:type] == "A"
+    lookup_chain.push lookup_result[:ip_address]
   else
-    lookup_chain.push dns_records[current]
-    lookup_chain = resolve(dns_records, lookup_chain, domain)
+    lookup_chain.push lookup_result[:alias]
+    lookup_chain = resolve(dns_records, lookup_chain, lookup_result[:alias]) #here instead of lookup_result[:alias], we can also use lookup_chain[-1]
   end
 
   return lookup_chain
