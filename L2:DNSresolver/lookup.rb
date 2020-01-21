@@ -26,16 +26,16 @@ dns_raw = File.readlines("zone")
 
 def parse_dns(dns_raw)
   dns_records = {}
-  dns_raw.each do |line|
-    unless line[0] == "\n" or line[0] == "#"
-      arr = line.split ","
-      if arr[0].strip == "A"
-        dns_records[arr[1].strip] = { :type => "A", :ip_address => arr[2].chomp.strip }
-      else
-        dns_records[arr[1].strip] = { :type => "CNAME", :alias => arr[2].chomp.strip }
-      end
-    end
+
+  filter1 = dns_raw.reject { |line| line.empty? } #removes ""
+  filter2 = filter1.reject { |line| line[0] == "\n" } #removes "\n..."
+  filter3 = filter2.reject { |line| line.include? "#" } #removes "#..."
+
+  filter3.each do |line|
+    data = line.split ","
+    dns_records[data[1].strip] = { :type => data[0].strip, :val => data[2].strip }
   end
+
   return dns_records
 end
 
@@ -44,11 +44,9 @@ def resolve(dns_records, lookup_chain, domain)
 
   if lookup_result == nil
     lookup_chain = ["Error: record not found for #{domain}"]
-  elsif lookup_result[:type] == "A"
-    lookup_chain.push lookup_result[:ip_address]
   else
-    lookup_chain.push lookup_result[:alias]
-    lookup_chain = resolve(dns_records, lookup_chain, lookup_result[:alias]) #here instead of lookup_result[:alias], we can also use lookup_chain[-1]
+    lookup_chain.push lookup_result[:val]
+    lookup_chain = resolve(dns_records, lookup_chain, lookup_result[:val]) if lookup_result[:type] == "CNAME"
   end
 
   return lookup_chain
