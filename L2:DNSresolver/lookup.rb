@@ -28,13 +28,14 @@ def parse_dns(dns_raw)
   dns_records = {}
 
   dns_raw.
-    reject! { |line| line.strip.empty? }.
-    reject! { |line| line.strip[0] == "#" }
+    map { |line| line.strip }.
+    reject { |line| line.empty? }.
+    reject { |line| line[0] == "#" }.
 
-  dns_raw.each do |line|
-    data = line.split ","
-    dns_records[data[1].strip] = { :type => data[0].strip, :val => data[2].strip }
-  end
+    each do |line|
+      data = line.split ","
+      dns_records[data[1].strip] = { :type => data[0].strip, :val => data[2].strip }
+    end
 
   return dns_records
 end
