@@ -27,11 +27,11 @@ dns_raw = File.readlines("zone")
 def parse_dns(dns_raw)
   dns_records = {}
 
-  filter1 = dns_raw.reject { |line| line.empty? } #removes ""
-  filter2 = filter1.reject { |line| line[0] == "\n" } #removes "\n..."
-  filter3 = filter2.reject { |line| line.include? "#" } #removes "#..."
+  dns_raw.
+    reject! { |line| line.strip.empty? }.
+    reject! { |line| line.strip[0] == "#" }
 
-  filter3.each do |line|
+  dns_raw.each do |line|
     data = line.split ","
     dns_records[data[1].strip] = { :type => data[0].strip, :val => data[2].strip }
   end
